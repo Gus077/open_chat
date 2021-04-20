@@ -19,11 +19,12 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -55,6 +56,11 @@ public class Controller implements Initializable {
     private Stage stage;
     private Stage regStage;
     private RegController regController;
+
+    private File history;
+    private Reader reader;
+    private PrintWriter writer;
+
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -109,6 +115,9 @@ public class Controller implements Initializable {
                             if (str.startsWith("/auth_ok")) {
                                 nickname = str.split("\\s+")[1];
                                 setAuthenticated(true);
+                                textArea.appendText(getLast100LinesOfHistory());
+                                history = new File("client/src/main/java/client/history_" + nickname +".txt");
+                                history.createNewFile();
                                 break;
                             }
                             if (str.startsWith("/reg_ok")) {
@@ -120,10 +129,13 @@ public class Controller implements Initializable {
 
                         } else {
                             textArea.appendText(str + "\n");
+
+                            write(str + "\n");
                         }
                     }
                     //цикл работы
                     while (authenticated) {
+
                         String str = in.readUTF();
 
                         if (str.startsWith("/")) {
@@ -140,12 +152,16 @@ public class Controller implements Initializable {
                                     }
                                 });
                             }
-                            if (str.startsWith("/urnick ")){
+                            //==============//
+                            if (str.startsWith("/yournickis ")) {
                                 nickname = str.split(" ")[1];
+                                history.renameTo(new File("client/src/main/java/client/history_" + nickname +".txt"));
                                 setTitle(nickname);
                             }
+                            //==============//
                         } else {
                             textArea.appendText(str + "\n");
+                            write(str + "\n");
                         }
                     }
                 } catch (IOException e) {
@@ -247,5 +263,34 @@ public class Controller implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void write (String str){
+        try {
+            writer = new PrintWriter(new FileOutputStream("client/src/main/java/client/history_" + nickname +".txt"));
+            writer.println(str);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getLast100LinesOfHistory() {
+        if (!Files.exists(Paths.get("client/src/main/java/client/history_" + nickname +".txt"))) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        try {
+            List<String> historyLines = Files.readAllLines(Paths.get("client/src/main/java/client/history_" + nickname +".txt"));
+            int startPosition = 0;
+            if (historyLines.size() > 100) {
+                startPosition = historyLines.size() - 100;
+            }
+            for (int i = startPosition; i < historyLines.size(); i++) {
+                sb.append(historyLines.get(i)).append(System.lineSeparator());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
     }
 }

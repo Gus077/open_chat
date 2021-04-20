@@ -3,7 +3,7 @@ package server;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimpleAuthService {
+public class SimpleAuthService implements AuthService{
     private class UserData {
         String login;
         String password;
@@ -30,7 +30,7 @@ public class SimpleAuthService {
         }
     }
 
-
+    @Override
     public String getNicknameByLoginAndPassword(String login, String password) {
         for (UserData u : users) {
             if(u.login.equals(login) && u.password.equals(password)){
@@ -41,7 +41,7 @@ public class SimpleAuthService {
         return null;
     }
 
-
+    @Override
     public boolean registration(String login, String password, String nickname) {
         for (UserData u : users) {
             if(u.login.equals(login) || u.nickname.equals(nickname)){
@@ -50,5 +50,10 @@ public class SimpleAuthService {
         }
         users.add(new UserData(login, password, nickname));
         return true;
+    }
+
+    @Override
+    public boolean changeNick(String oldNickname, String newNickname) {
+        return false;
     }
 }
